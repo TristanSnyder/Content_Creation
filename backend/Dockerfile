@@ -78,8 +78,16 @@ CMD ["uvicorn", "src.main:app", \
 FROM base as production
 
 # Additional production optimizations
-ENV ENVIRONMENT=production \
-    LOG_LEVEL=INFO
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    ENVIRONMENT=production \
+    LOG_LEVEL=INFO \
+    VECTOR_DB_PATH=./chroma_db \
+    EMBEDDING_MODEL=all-MiniLM-L6-v2 \
+    DEMO_MODE=true
 
 # Note: Railway manages environment variables, no .env file needed
 
