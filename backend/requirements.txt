@@ -11,7 +11,7 @@ websockets==12.0
 
 # Database
 chromadb==0.4.18
-sentence-transformers==2.2.2
+sentence-transformers>=2.7.0
 numpy==1.24.3
 scikit-learn==1.3.2
 
