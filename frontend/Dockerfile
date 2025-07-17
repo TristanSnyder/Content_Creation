@@ -4,11 +4,11 @@ FROM node:18-alpine as builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Copy package.json first
+COPY package.json ./
 
-# Install dependencies with cache optimization
-RUN npm ci --only=production --silent
+# Install dependencies (this will generate package-lock.json)
+RUN npm install --silent
 
 # Copy source code
 COPY . .
@@ -73,11 +73,11 @@ FROM node:18-alpine as development
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Copy package.json first
+COPY package.json ./
 
 # Install all dependencies (including dev)
-RUN npm ci --silent
+RUN npm install --silent
 
 # Copy source code
 COPY . .
