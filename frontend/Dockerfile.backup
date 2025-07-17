@@ -7,8 +7,14 @@ WORKDIR /app
 # Copy package.json first
 COPY package.json ./
 
+# Debug: Show Node.js and npm versions
+RUN node --version && npm --version
+
+# Debug: Show package.json contents
+RUN cat package.json
+
 # Install dependencies (this will generate package-lock.json)
-RUN npm install --silent
+RUN npm install --verbose
 
 # Copy source code
 COPY . .
@@ -77,7 +83,7 @@ WORKDIR /app
 COPY package.json ./
 
 # Install all dependencies (including dev)
-RUN npm install --silent
+RUN npm install --verbose
 
 # Copy source code
 COPY . .

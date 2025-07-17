@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm run serve",
+    "startCommand": "npm run preview -- --host 0.0.0.0 --port $PORT",
     "restartPolicyType": "NEVER"
   },
   "envs": {
@@ -12,31 +12,31 @@
       "description": "Node environment",
       "default": "production"
     },
-    "REACT_APP_API_URL": {
+    "VITE_API_URL": {
       "description": "Backend API URL (set to your Railway backend service URL)",
       "default": "https://your-backend-service.railway.app"
     },
-    "REACT_APP_WS_URL": {
+    "VITE_WS_URL": {
       "description": "WebSocket URL (set to your Railway backend service URL)",
       "default": "wss://your-backend-service.railway.app"
     },
-    "REACT_APP_TITLE": {
+    "VITE_APP_TITLE": {
       "description": "Application title",
       "default": "Content Creation Assistant"
     },
-    "REACT_APP_VERSION": {
+    "VITE_APP_VERSION": {
       "description": "Application version",
       "default": "1.0.0"
     },
-    "REACT_APP_ENABLE_ANALYTICS": {
+    "VITE_ENABLE_ANALYTICS": {
       "description": "Enable analytics features",
       "default": "true"
     },
-    "REACT_APP_ENABLE_MCP_INTEGRATIONS": {
+    "VITE_ENABLE_MCP_INTEGRATIONS": {
       "description": "Enable MCP platform integrations",
       "default": "true"
     },
-    "REACT_APP_ENABLE_REAL_TIME_FEATURES": {
+    "VITE_ENABLE_REAL_TIME_FEATURES": {
       "description": "Enable real-time WebSocket features",
       "default": "true"
     }
