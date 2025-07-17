@@ -81,8 +81,7 @@ FROM base as production
 ENV ENVIRONMENT=production \
     LOG_LEVEL=INFO
 
-# Copy any additional production configs
-COPY deployment/production.env /app/.env
+# Note: Railway manages environment variables, no .env file needed
 
 # Use production command
 CMD ["uvicorn", "src.main:app", \
@@ -91,5 +90,4 @@ CMD ["uvicorn", "src.main:app", \
      "--workers", "2", \
      "--loop", "uvloop", \
      "--http", "httptools", \
-     "--access-log", \
-     "--log-config", "src/config/logging.json"] 
+     "--access-log"] 

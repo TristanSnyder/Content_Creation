@@ -47,14 +47,12 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy additional nginx configurations
-COPY deployment/nginx/ /etc/nginx/conf.d/
+# Note: Using default nginx configurations for Railway deployment
 
 # Create nginx user and set permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/conf.d
+    chown -R nginx:nginx /var/log/nginx
 
 # Switch to non-root user
 USER nginx
