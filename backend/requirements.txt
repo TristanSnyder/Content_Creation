@@ -15,9 +15,9 @@ sentence-transformers==2.2.2
 numpy==1.24.3
 scikit-learn==1.3.2
 
-# LangChain
-langchain==0.0.335
-langchain-community==0.0.6
+# LangChain (updated to compatible versions)
+langchain==0.0.348
+langchain-community==0.0.10
 langchain-experimental==0.0.45
 langsmith==0.0.70
 
@@ -25,10 +25,6 @@ langsmith==0.0.70
 openai==1.3.7
 anthropic==0.7.8
 tiktoken==0.5.2
-
-# HTTP client
-httpx==0.25.2
-aiohttp==3.9.1
 
 # Development
 pytest==7.4.3
@@ -43,9 +39,6 @@ python-dotenv==1.0.0
 python-multipart==0.0.6
 jinja2==3.1.2
 rich==13.7.0
-
-# Async support
-asyncio==3.4.3
 
 # Optional dependencies for enhanced functionality
 torch==2.1.1  # For sentence-transformers
