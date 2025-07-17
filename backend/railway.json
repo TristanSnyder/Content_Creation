@@ -1,0 +1,55 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "uvicorn src.main:app --host 0.0.0.0 --port $PORT",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "envs": {
+    "PYTHONPATH": {
+      "description": "Python path for module imports",
+      "default": "/app"
+    },
+    "PYTHONUNBUFFERED": {
+      "description": "Ensure Python output is sent directly to terminal",
+      "default": "1"
+    },
+    "ENVIRONMENT": {
+      "description": "Application environment",
+      "default": "production"
+    },
+    "LOG_LEVEL": {
+      "description": "Application log level",
+      "default": "INFO"
+    },
+    "VECTOR_DB_PATH": {
+      "description": "Path for ChromaDB vector database storage",
+      "default": "./chroma_db"
+    },
+    "EMBEDDING_MODEL": {
+      "description": "Sentence transformer model for embeddings",
+      "default": "all-MiniLM-L6-v2"
+    },
+    "DEMO_MODE": {
+      "description": "Enable demo mode with sample data",
+      "default": "true"
+    },
+    "COMPANY_NAME": {
+      "description": "Default company name for content generation",
+      "default": "EcoTech Solutions"
+    },
+    "MAX_CONTENT_LENGTH": {
+      "description": "Maximum content length for generation",
+      "default": "2000"
+    },
+    "CORS_ORIGINS": {
+      "description": "Allowed CORS origins (comma-separated)",
+      "default": "https://*.railway.app,http://localhost:3000"
+    }
+  }
+} 

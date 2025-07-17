@@ -1,0 +1,264 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+      args:
+        - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:80
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
+      - MAX_CONTENT_LENGTH=2000
+      - VECTOR_DB_COLLECTION=ecotech_content
+    volumes:
+      - ./backend:/app
+      - backend_data:/app/data
+      - chroma_data:/app/data/chroma_db
+    env_file:
+      - .env
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    depends_on:
+      chroma:
+        condition: service_healthy
+    networks:
+      - content_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # React Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+      args:
+        - VITE_API_URL=http://localhost:8000
+        - VITE_WS_URL=ws://localhost:8000
+        - VITE_APP_TITLE=Content Creation Assistant
+        - VITE_APP_VERSION=1.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000
+      - VITE_APP_TITLE=Content Creation Assistant
+      - VITE_APP_VERSION=1.0.0
+      - VITE_ENABLE_ANALYTICS=true
+      - VITE_ENABLE_MCP_INTEGRATIONS=true
+      - VITE_ENABLE_REAL_TIME_FEATURES=true
+      - VITE_DEV_MODE=true
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - content_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # ChromaDB Vector Database
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["*"]
+      - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.token.TokenAuthServerProvider
+      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=/chroma/auth/server.htpasswd
+      - CHROMA_SERVER_AUTH_TOKEN_TRANSPORT_HEADER=X-Chroma-Token
+    volumes:
+      - chroma_data:/chroma/chroma
+      - ./deployment/chroma:/chroma/auth
+    networks:
+      - content_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deployment/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - content_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    profiles:
+      - production
+
+  # Redis for Caching (Optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - content_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    profiles:
+      - production
+      - caching
+
+  # Monitoring with Prometheus (Optional)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - content_network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Grafana for Visualization (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployment/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - content_network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+# Named Volumes
+volumes:
+  backend_data:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  chroma_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# Networks
+networks:
+  content_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Development Override
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+---
+version: '3.8'
+
+# Additional development services
+x-development: &development-defaults
+  restart: "no"
+  
+services:
+  # Development backend with hot reload
+  backend-dev:
+    <<: *development-defaults
+    extends:
+      service: backend
+    volumes:
+      - ./backend:/app
+      - backend_dev_data:/app/data
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - RELOAD=true
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    profiles:
+      - dev
+
+  # Development frontend with hot reload
+  frontend-dev:
+    <<: *development-defaults
+    extends:
+      service: frontend
+    volumes:
+      - ./frontend:/app
+      - frontend_dev_node_modules:/app/node_modules
+    environment:
+      - VITE_DEV_MODE=true
+      - VITE_ENABLE_DEVTOOLS=true
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    profiles:
+      - dev
+
+volumes:
+  backend_dev_data:
+    driver: local
+  frontend_dev_node_modules:
+    driver: local 
