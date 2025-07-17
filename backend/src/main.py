@@ -49,26 +49,39 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize vector database
         logger.info("Initializing vector database...")
-        await initialize_vector_database()
-        app_state["vector_db_initialized"] = True
-        logger.info("✅ Vector database initialized successfully")
+        try:
+            await initialize_vector_database()
+            app_state["vector_db_initialized"] = True
+            logger.info("✅ Vector database initialized successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Vector database initialization failed: {e}")
+            logger.info("Continuing without vector database")
         
         # Start mock MCP servers
         logger.info("Starting mock MCP servers...")
-        await start_mock_servers()
-        app_state["mock_servers_running"] = True
-        logger.info("✅ Mock MCP servers started successfully")
+        try:
+            await start_mock_servers()
+            app_state["mock_servers_running"] = True
+            logger.info("✅ Mock MCP servers started successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Mock MCP servers startup failed: {e}")
+            logger.info("Continuing without mock servers")
         
-        # Additional initialization
-        await initialize_agents()
-        logger.info("✅ LangChain agents initialized")
+        # Additional initialization - make fault tolerant
+        try:
+            await initialize_agents()
+            logger.info("✅ LangChain agents initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ LangChain agents initialization failed: {e}")
+            logger.info("Continuing startup without agents - health endpoint will still be available")
         
         startup_time = time.time() - app_state["startup_time"]
         logger.info(f"🎉 Application startup completed in {startup_time:.2f} seconds")
         
     except Exception as e:
         logger.error(f"❌ Application startup failed: {e}")
-        raise
+        # Don't re-raise - allow the app to start even if initialization fails
+        logger.info("🟡 Starting with minimal functionality - health endpoint available")
     
     yield
     
